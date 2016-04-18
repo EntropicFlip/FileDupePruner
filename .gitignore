@@ -1,3 +1,5 @@
 FileDupePruner\FileDupePruner\obj
 FileDupePruner\FileDupePruner\bin\Debug
 .vs
+*.pdb
+*.vshost.*
