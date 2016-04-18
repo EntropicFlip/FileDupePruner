@@ -37,8 +37,14 @@
 			this.SecondaryLabel = new System.Windows.Forms.Label();
 			this.PruneDumpTextbox = new System.Windows.Forms.TextBox();
 			this.PruneDumpLabel = new System.Windows.Forms.Label();
-			this.checkBoxDoNothing = new System.Windows.Forms.CheckBox();
+			this.checkBoxPreviewOnly = new System.Windows.Forms.CheckBox();
 			this.checkBoxWithinSelf = new System.Windows.Forms.CheckBox();
+			this.backgroundWorker = new System.ComponentModel.BackgroundWorker();
+			this.folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
+			this.buttonPrimary = new System.Windows.Forms.Button();
+			this.buttonSecondary = new System.Windows.Forms.Button();
+			this.buttonPrune = new System.Windows.Forms.Button();
+			this.buttonCancel = new System.Windows.Forms.Button();
 			this.SuspendLayout();
 			// 
 			// MoveDupesButton
@@ -54,8 +60,11 @@
 			// pruneProgressBar
 			// 
 			this.pruneProgressBar.Location = new System.Drawing.Point(15, 257);
+			this.pruneProgressBar.MarqueeAnimationSpeed = 1000;
 			this.pruneProgressBar.Name = "pruneProgressBar";
 			this.pruneProgressBar.Size = new System.Drawing.Size(646, 21);
+			this.pruneProgressBar.Step = 1;
+			this.pruneProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
 			this.pruneProgressBar.TabIndex = 1;
 			// 
 			// ProgressLabel
@@ -72,7 +81,7 @@
 			this.PrimaryPathTextbox.AllowDrop = true;
 			this.PrimaryPathTextbox.Location = new System.Drawing.Point(15, 75);
 			this.PrimaryPathTextbox.Name = "PrimaryPathTextbox";
-			this.PrimaryPathTextbox.Size = new System.Drawing.Size(646, 20);
+			this.PrimaryPathTextbox.Size = new System.Drawing.Size(620, 20);
 			this.PrimaryPathTextbox.TabIndex = 3;
 			this.PrimaryPathTextbox.TextChanged += new System.EventHandler(this.PrimaryPathTextbox_TextChanged);
 			this.PrimaryPathTextbox.DragDrop += new System.Windows.Forms.DragEventHandler(this.OnDragDrop);
@@ -83,7 +92,7 @@
 			this.SecondaryPathTextbox.AllowDrop = true;
 			this.SecondaryPathTextbox.Location = new System.Drawing.Point(15, 119);
 			this.SecondaryPathTextbox.Name = "SecondaryPathTextbox";
-			this.SecondaryPathTextbox.Size = new System.Drawing.Size(644, 20);
+			this.SecondaryPathTextbox.Size = new System.Drawing.Size(620, 20);
 			this.SecondaryPathTextbox.TabIndex = 4;
 			this.SecondaryPathTextbox.TextChanged += new System.EventHandler(this.SecondaryPathTextbox_TextChanged);
 			this.SecondaryPathTextbox.DragDrop += new System.Windows.Forms.DragEventHandler(this.OnDragDrop);
@@ -112,8 +121,9 @@
 			this.PruneDumpTextbox.AllowDrop = true;
 			this.PruneDumpTextbox.Location = new System.Drawing.Point(15, 174);
 			this.PruneDumpTextbox.Name = "PruneDumpTextbox";
-			this.PruneDumpTextbox.Size = new System.Drawing.Size(646, 20);
+			this.PruneDumpTextbox.Size = new System.Drawing.Size(620, 20);
 			this.PruneDumpTextbox.TabIndex = 7;
+			this.PruneDumpTextbox.TextChanged += new System.EventHandler(this.PruneDumpTextbox_TextChanged);
 			this.PruneDumpTextbox.DragDrop += new System.Windows.Forms.DragEventHandler(this.OnDragDrop);
 			this.PruneDumpTextbox.DragEnter += new System.Windows.Forms.DragEventHandler(this.OnDragEnter);
 			// 
@@ -126,18 +136,18 @@
 			this.PruneDumpLabel.TabIndex = 8;
 			this.PruneDumpLabel.Text = "Place to dump pruned files";
 			// 
-			// checkBoxDoNothing
+			// checkBoxPreviewOnly
 			// 
-			this.checkBoxDoNothing.AutoSize = true;
-			this.checkBoxDoNothing.Checked = true;
-			this.checkBoxDoNothing.CheckState = System.Windows.Forms.CheckState.Checked;
-			this.checkBoxDoNothing.Location = new System.Drawing.Point(15, 12);
-			this.checkBoxDoNothing.Name = "checkBoxDoNothing";
-			this.checkBoxDoNothing.Size = new System.Drawing.Size(177, 17);
-			this.checkBoxDoNothing.TabIndex = 9;
-			this.checkBoxDoNothing.Text = "Preview Only (generate log files)";
-			this.checkBoxDoNothing.UseVisualStyleBackColor = true;
-			this.checkBoxDoNothing.CheckedChanged += new System.EventHandler(this.checkBoxDoNothing_CheckedChanged);
+			this.checkBoxPreviewOnly.AutoSize = true;
+			this.checkBoxPreviewOnly.Checked = true;
+			this.checkBoxPreviewOnly.CheckState = System.Windows.Forms.CheckState.Checked;
+			this.checkBoxPreviewOnly.Location = new System.Drawing.Point(15, 12);
+			this.checkBoxPreviewOnly.Name = "checkBoxPreviewOnly";
+			this.checkBoxPreviewOnly.Size = new System.Drawing.Size(177, 17);
+			this.checkBoxPreviewOnly.TabIndex = 9;
+			this.checkBoxPreviewOnly.Text = "Preview Only (generate log files)";
+			this.checkBoxPreviewOnly.UseVisualStyleBackColor = true;
+			this.checkBoxPreviewOnly.CheckedChanged += new System.EventHandler(this.checkBoxDoNothing_CheckedChanged);
 			// 
 			// checkBoxWithinSelf
 			// 
@@ -150,14 +160,71 @@
 			this.checkBoxWithinSelf.UseVisualStyleBackColor = true;
 			this.checkBoxWithinSelf.CheckedChanged += new System.EventHandler(this.checkBoxWithinSelf_CheckedChanged);
 			// 
+			// backgroundWorker
+			// 
+			this.backgroundWorker.WorkerReportsProgress = true;
+			this.backgroundWorker.WorkerSupportsCancellation = true;
+			this.backgroundWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.backgroundWorker_DoWork);
+			this.backgroundWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.backgroundWorker_ProgressChanged);
+			this.backgroundWorker.RunWorkerCompleted += new System.ComponentModel.RunWorkerCompletedEventHandler(this.backgroundWorker_Completed);
+			// 
+			// folderBrowserDialog
+			// 
+			this.folderBrowserDialog.RootFolder = System.Environment.SpecialFolder.MyComputer;
+			this.folderBrowserDialog.ShowNewFolderButton = false;
+			// 
+			// buttonPrimary
+			// 
+			this.buttonPrimary.Location = new System.Drawing.Point(641, 72);
+			this.buttonPrimary.Name = "buttonPrimary";
+			this.buttonPrimary.Size = new System.Drawing.Size(30, 23);
+			this.buttonPrimary.TabIndex = 11;
+			this.buttonPrimary.Text = "...";
+			this.buttonPrimary.UseVisualStyleBackColor = true;
+			this.buttonPrimary.Click += new System.EventHandler(this.buttonPrimary_Click);
+			// 
+			// buttonSecondary
+			// 
+			this.buttonSecondary.Location = new System.Drawing.Point(641, 116);
+			this.buttonSecondary.Name = "buttonSecondary";
+			this.buttonSecondary.Size = new System.Drawing.Size(30, 23);
+			this.buttonSecondary.TabIndex = 12;
+			this.buttonSecondary.Text = "...";
+			this.buttonSecondary.UseVisualStyleBackColor = true;
+			this.buttonSecondary.Click += new System.EventHandler(this.buttonSecondary_Click);
+			// 
+			// buttonPrune
+			// 
+			this.buttonPrune.Location = new System.Drawing.Point(641, 174);
+			this.buttonPrune.Name = "buttonPrune";
+			this.buttonPrune.Size = new System.Drawing.Size(30, 23);
+			this.buttonPrune.TabIndex = 13;
+			this.buttonPrune.Text = "...";
+			this.buttonPrune.UseVisualStyleBackColor = true;
+			this.buttonPrune.Click += new System.EventHandler(this.buttonPrune_Click);
+			// 
+			// buttonCancel
+			// 
+			this.buttonCancel.Location = new System.Drawing.Point(15, 297);
+			this.buttonCancel.Name = "buttonCancel";
+			this.buttonCancel.Size = new System.Drawing.Size(170, 32);
+			this.buttonCancel.TabIndex = 14;
+			this.buttonCancel.Text = "Cancel";
+			this.buttonCancel.UseVisualStyleBackColor = true;
+			this.buttonCancel.Click += new System.EventHandler(this.buttonCancel_Click);
+			// 
 			// MainForm
 			// 
 			this.AcceptButton = this.MoveDupesButton;
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(683, 363);
+			this.Controls.Add(this.buttonCancel);
+			this.Controls.Add(this.buttonPrune);
+			this.Controls.Add(this.buttonSecondary);
+			this.Controls.Add(this.buttonPrimary);
 			this.Controls.Add(this.checkBoxWithinSelf);
-			this.Controls.Add(this.checkBoxDoNothing);
+			this.Controls.Add(this.checkBoxPreviewOnly);
 			this.Controls.Add(this.PruneDumpLabel);
 			this.Controls.Add(this.PruneDumpTextbox);
 			this.Controls.Add(this.SecondaryLabel);
@@ -186,8 +253,14 @@
 		private System.Windows.Forms.Label SecondaryLabel;
 		private System.Windows.Forms.TextBox PruneDumpTextbox;
 		private System.Windows.Forms.Label PruneDumpLabel;
-		private System.Windows.Forms.CheckBox checkBoxDoNothing;
+		private System.Windows.Forms.CheckBox checkBoxPreviewOnly;
 		private System.Windows.Forms.CheckBox checkBoxWithinSelf;
+		private System.ComponentModel.BackgroundWorker backgroundWorker;
+		private System.Windows.Forms.FolderBrowserDialog folderBrowserDialog;
+		private System.Windows.Forms.Button buttonPrimary;
+		private System.Windows.Forms.Button buttonSecondary;
+		private System.Windows.Forms.Button buttonPrune;
+		private System.Windows.Forms.Button buttonCancel;
 	}
 }
 

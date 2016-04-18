@@ -1,11 +1,13 @@
 ﻿using System;
-using System.IO;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -29,6 +31,7 @@ namespace FileDupePruner
 		/////////////////////////////////////////////////////////////////////////////
 		private void MainForm_Load(object sender, EventArgs e)
 		{
+			buttonCancel.Hide();
 			OnWithinSelfChanged();
 			OnDoNothingChanged();
 		}
@@ -47,6 +50,178 @@ namespace FileDupePruner
 				result += i;
 			}
 			return result;
+		}
+
+		/////////////////////////////////////////////////////////////////////////////
+		private void backgroundWorker_DoWork(object sender, DoWorkEventArgs e)
+		{
+			bool previewOnly = checkBoxPreviewOnly.Checked;
+			bool withinSelf = checkBoxWithinSelf.Checked;
+			string primaryPath = PrimaryPathTextbox.Text;
+			string secondaryPath = SecondaryPathTextbox.Text;
+			string pruneDumpPath = PruneDumpTextbox.Text;
+
+			//Set up log...
+			string prunedFilesLogName = previewOnly
+										? pruneDumpPath + "\\PrunePreview.log"
+										: pruneDumpPath + "\\PrunedFiles.log";
+			StreamWriter logWriter = File.CreateText(prunedFilesLogName);
+			logWriter.AutoFlush = true;
+
+			logWriter.WriteLine("Date: " + System.DateTime.Now.ToString());
+
+			//Gather files...
+			List<string> primaryFilenames = new List<string>();
+			GatherAllFiles(primaryPath, ref primaryFilenames);
+			int numPrimaryFiles = primaryFilenames.Count;
+
+			List<string> secondaryFilenames = new List<string>();
+			if (withinSelf)
+			{
+				logWriter.WriteLine("Main Folder: " + primaryPath + "(" + numPrimaryFiles.ToString() + " files)");
+			}
+			else
+			{
+				GatherAllFiles(secondaryPath, ref secondaryFilenames);
+				logWriter.WriteLine("Primary (" + numPrimaryFiles.ToString() + " files) | Secondary (" + secondaryFilenames.Count.ToString() + " files)");
+				logWriter.WriteLine(primaryPath + " | " + secondaryPath);
+			}
+
+			logWriter.WriteLine("Prune Dump Folder: " + pruneDumpPath);
+			string logMsg = previewOnly
+							? "=== FILES THAT CAN BE PRUNED ==="
+							: "=== PRUNED FILES ===";
+			logWriter.WriteLine(logMsg);
+
+			//Set up the progress bar
+			int maxSteps = withinSelf
+						? CalculateIterations(numPrimaryFiles)
+						: numPrimaryFiles * secondaryFilenames.Count;
+			int steps = 0;
+
+			//Compare files...
+			Dictionary<string, string> filesToPrune = new Dictionary<string, string>();
+			FileStream primaryFileStream, secondaryFileStream;
+			string primaryFileWithoutPath, secondaryFileWithoutPath;
+			if (withinSelf)
+			{
+				string primaryFile, secondaryFile;
+				for (int i = 0; i < numPrimaryFiles - 1; ++i)
+				{
+					primaryFile = primaryFilenames[i];
+					primaryFileWithoutPath = primaryFile.Substring(primaryPath.Length + 1);
+					primaryFileStream = new FileStream(primaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+					for (int j = (i + 1); j < numPrimaryFiles; ++j)
+					{
+						++steps;
+						backgroundWorker.ReportProgress(100 * steps / maxSteps);
+						secondaryFile = primaryFilenames[j];
+						secondaryFileStream = new FileStream(secondaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+						if (AreFileStreamsEqual(primaryFileStream, secondaryFileStream))
+						{
+							secondaryFileWithoutPath = secondaryFile.Substring(primaryPath.Length + 1);
+							logWriter.WriteLine("[DUPLICATE] " + primaryFileWithoutPath + " | " + secondaryFileWithoutPath);
+							if (!filesToPrune.ContainsKey(secondaryFile)) //Maybe it got pruned in a previous pass
+							{
+								string prunedFileNameWithPath = pruneDumpPath + "\\" + secondaryFileWithoutPath;
+								filesToPrune.Add(secondaryFile, prunedFileNameWithPath);
+							}
+						}
+						secondaryFileStream.Close();
+					}
+					primaryFileStream.Close();
+				}
+			}
+			else
+			{
+				foreach (string primaryFile in primaryFilenames)
+				{
+					primaryFileWithoutPath = primaryFile.Substring(primaryPath.Length + 1);
+					primaryFileStream = new FileStream(primaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+					foreach (string secondaryFile in secondaryFilenames)
+					{
+						++steps;
+						backgroundWorker.ReportProgress(100 * steps / maxSteps);
+						if (primaryFile.Equals(secondaryFile))
+						{
+							//This can happen if the user specifies a nested folder as a secondary or primary
+							continue;
+						}
+						secondaryFileStream = new FileStream(secondaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+						if (AreFileStreamsEqual(primaryFileStream, secondaryFileStream))
+						{
+							secondaryFileWithoutPath = secondaryFile.Substring(secondaryPath.Length + 1);
+							logWriter.WriteLine("[DUPLICATE] " + primaryFileWithoutPath + " | " + secondaryFileWithoutPath);
+							if (!filesToPrune.ContainsKey(secondaryFile)) //Maybe it got pruned in a previous pass
+							{
+								string prunedFileNameWithPath = pruneDumpPath + "\\" + secondaryFileWithoutPath;
+								filesToPrune.Add(secondaryFile, prunedFileNameWithPath);
+							}
+						}
+						secondaryFileStream.Close();
+					}
+					primaryFileStream.Close();
+				}
+			}
+
+			//Do the pruning...
+			int numFilesToPrune = filesToPrune.Count;
+			if (!previewOnly
+				&& (numFilesToPrune > 0))
+			{
+				logWriter.WriteLine("_________");
+				string sourcePath, prunedFileNameWithPath, prunedDirectoryName;
+				Dictionary<string, string>.Enumerator pruneIterator = filesToPrune.GetEnumerator();
+				while (pruneIterator.MoveNext())
+				{
+					sourcePath = pruneIterator.Current.Key;
+					prunedFileNameWithPath = pruneIterator.Current.Value;
+					prunedDirectoryName = Path.GetDirectoryName(prunedFileNameWithPath);
+					if (!Directory.Exists(prunedDirectoryName))
+					{
+						Directory.CreateDirectory(prunedDirectoryName);
+					}
+					if (File.Exists(prunedFileNameWithPath))
+					{
+						logWriter.WriteLine("[ALREADY EXISTS] " + prunedFileNameWithPath);
+					}
+					else
+					{
+						//File.Copy(sourcePath, prunedFileNameWithPath);
+						File.Move(sourcePath, prunedFileNameWithPath);
+					}
+				}
+			}
+
+			logWriter.WriteLine("_________");
+			logWriter.WriteLine("All done.");
+			logMsg = previewOnly
+					? numFilesToPrune.ToString() + " files can be pruned."
+					: numFilesToPrune.ToString() + " files were pruned.";
+			logWriter.WriteLine(logMsg);
+			logWriter.Close();
+		}
+
+		/////////////////////////////////////////////////////////////////////////////
+		private void backgroundWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+		{
+			int percentage = e.ProgressPercentage;
+			ProgressLabel.Text = "Progress: " + percentage + "%";
+			pruneProgressBar.Value = percentage;
+		}
+
+		/////////////////////////////////////////////////////////////////////////////
+		private void backgroundWorker_Completed(object sender, RunWorkerCompletedEventArgs e)
+		{
+			buttonCancel.Hide();
+			MessageBox.Show(this, "All done!");
+
+			pruneProgressBar.Value = 0;
+			RefreshIdleStatus();
+			Cursor.Current = Cursors.Default;
+
+			string pruneDumpPath = PruneDumpTextbox.Text;
+			Process.Start(pruneDumpPath);
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
@@ -92,99 +267,12 @@ namespace FileDupePruner
 				Directory.CreateDirectory(pruneDumpPath);
 			}
 
-			//Set up log...
-			string prunedFilesLogName = pruneDumpPath + "\\PruneLog.log";
-			StreamWriter logWriter = File.CreateText(prunedFilesLogName);
-			logWriter.AutoFlush = true;
-
-			if (withinSelf)
-			{
-				logWriter.WriteLine("=== FILES THAT CAN BE PRUNED " + System.DateTime.Now.ToString() + " ===");
-			}
-			else
-			{
-				logWriter.WriteLine("=== PRUNED FILES " + System.DateTime.Now.ToString() + " ===");
-			}
-
-			//Gather files...
-			List<string> primaryFilenames = new List<string>();
-			GatherAllFiles(primaryPath, ref primaryFilenames);
-			int numPrimaryFiles = primaryFilenames.Count;
-
-			List<string> secondaryFilenames = new List<string>();
-			if (!withinSelf)
-			{
-				GatherAllFiles(secondaryPath, ref secondaryFilenames);
-			}
-
-			//Set up the progress bar
+			ProgressLabel.Text = "Gathering Files to Evaluate";
 			pruneProgressBar.Value = 0;
-			pruneProgressBar.Step = 1;
-			pruneProgressBar.Minimum = 0;
-			int maxSteps = withinSelf
-						? CalculateIterations(numPrimaryFiles)
-						: numPrimaryFiles * secondaryFilenames.Count;
-			pruneProgressBar.Maximum = maxSteps;
-
-			//Compare files...
-			List<string> filesToPrune = new List<string>();
-			FileStream primaryFileStream, secondaryFileStream;
-			if (withinSelf)
-			{
-				string primaryFile, secondaryFile;
-				for (int i = 0; i < numPrimaryFiles-1; ++i)
-				{
-					primaryFile = primaryFilenames[i];
-					primaryFileStream = new FileStream(primaryFile, FileMode.Open);
-					for (int j = (i+1); j < numPrimaryFiles; ++j)
-					{
-						pruneProgressBar.PerformStep();
-						secondaryFile = primaryFilenames[j];
-						secondaryFileStream = new FileStream(secondaryFile, FileMode.Open);
-						if (AreFileStreamsEqual(primaryFileStream, secondaryFileStream))
-						{
-							filesToPrune.Add(secondaryFile);
-							logWriter.WriteLine("[" + secondaryFile + "] is a copy of [" + primaryFile + "]\n");
-						}
-						secondaryFileStream.Close();
-					}
-					primaryFileStream.Close();
-				}
-			}
-			else
-			{
-				foreach (string primaryFile in primaryFilenames)
-				{
-					primaryFileStream = new FileStream(primaryFile, FileMode.Open);
-					foreach (string secondaryFile in secondaryFilenames)
-					{
-						pruneProgressBar.PerformStep();
-						secondaryFileStream = new FileStream(secondaryFile, FileMode.Open);
-						if (AreFileStreamsEqual(primaryFileStream, secondaryFileStream))
-						{
-							filesToPrune.Add(secondaryFile);
-							logWriter.WriteLine("[" + secondaryFile + "] is a copy of [" + primaryFile + "]\n");
-						}
-						secondaryFileStream.Close();
-					}
-					primaryFileStream.Close();
-				}
-			}
-
-			logWriter.Close();
-
-			//Do the pruning...
-			int numFilesToPrune = filesToPrune.Count();
-			bool doNothing = checkBoxDoNothing.Checked;
-			if (doNothing)
-			{
-				MessageBox.Show(this, "All done\n" + numFilesToPrune.ToString() + " files can be pruned");
-			}
-			else
-			{
-				MessageBox.Show(this, "All done\n" + numFilesToPrune.ToString() + " files were pruned");
-			}
-			pruneProgressBar.Value = 0;
+			MoveDupesButton.Enabled = false;
+			Cursor.Current = Cursors.WaitCursor;
+			backgroundWorker.RunWorkerAsync();
+			buttonCancel.Show();
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
@@ -214,6 +302,7 @@ namespace FileDupePruner
 		/////////////////////////////////////////////////////////////////////////////
 		static void GatherAllFiles(string sourcePath, ref List<string> fileList)
 		{
+			//First, the files...
 			string nonPathName;
 			string[] files = Directory.GetFiles(sourcePath);
 			int numFiles = files.Length;
@@ -225,6 +314,7 @@ namespace FileDupePruner
 				fileList.Add(sourceFileName);
 			}
 
+			//Then recursion into nested folders...
 			string[] folders = Directory.GetDirectories(sourcePath);
 			int numFolders = folders.Length;
 			string nestedSourcePath;
@@ -245,6 +335,7 @@ namespace FileDupePruner
 				string pathName = fileDirNames[0];
 				if (Directory.Exists(pathName))
 				{
+					folderBrowserDialog.SelectedPath = pathName;
 					return pathName;
 				}
 			}
@@ -333,12 +424,8 @@ namespace FileDupePruner
 		/////////////////////////////////////////////////////////////////////////////
 		private void PrimaryPathTextbox_TextChanged(object sender, EventArgs e)
 		{
-			if (!checkBoxWithinSelf.Checked)
-			{
-				return;
-			}
-
 			SetupPruneBasedOnPrimary();
+			RefreshIdleStatus();
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
@@ -363,12 +450,60 @@ namespace FileDupePruner
 		/////////////////////////////////////////////////////////////////////////////
 		private void SecondaryPathTextbox_TextChanged(object sender, EventArgs e)
 		{
+			SetupPruneBasedOnSecondary();
+			RefreshIdleStatus();
+		}
+
+		/////////////////////////////////////////////////////////////////////////////
+		void RefreshIdleStatus()
+		{
+			MoveDupesButton.Enabled = false;
+
 			if (checkBoxWithinSelf.Checked)
 			{
-				return;
+				string pathName = PrimaryPathTextbox.Text;
+				if ((0 == pathName.Length)
+					|| !Directory.Exists(pathName))
+				{
+					ProgressLabel.Text = "Specify a Primary folder to prune";
+					return;
+				}
+				pathName = PruneDumpTextbox.Text;
+				if (0 == pathName.Length)
+				{
+					ProgressLabel.Text = "Specify a folder move pruned files to";
+					return;
+				}
+
+				ProgressLabel.Text = "Ready";
+			}
+			else
+			{
+				string pathName = PrimaryPathTextbox.Text;
+				if ((0 == pathName.Length)
+					|| !Directory.Exists(pathName))
+				{
+					ProgressLabel.Text = "Specify a Primary folder to prune";
+					return;
+				}
+				pathName = SecondaryPathTextbox.Text;
+				if ((0 == pathName.Length)
+					|| !Directory.Exists(pathName))
+				{
+					ProgressLabel.Text = "Specify a secondary folder to prune";
+					return;
+				}
+				pathName = PruneDumpTextbox.Text;
+				if (0 == pathName.Length)
+				{
+					ProgressLabel.Text = "Specify a folder move pruned files to";
+					return;
+				}
+
+				ProgressLabel.Text = "Ready";
 			}
 
-			SetupPruneBasedOnSecondary();
+			MoveDupesButton.Enabled = true;
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
@@ -378,6 +513,7 @@ namespace FileDupePruner
 			{
 				PrimaryLabel.Text = "Folder to Prune (Drag a folder for easy path setting)";
 				SecondaryLabel.Hide();
+				buttonSecondary.Hide();
 				SecondaryPathTextbox.Hide();
 				SetupPruneBasedOnPrimary();
 			}
@@ -385,9 +521,11 @@ namespace FileDupePruner
 			{
 				PrimaryLabel.Text = "Primary Folder to Preserve (Drag a folder for easy path setting)";
 				SecondaryLabel.Show();
+				buttonSecondary.Show();
 				SecondaryPathTextbox.Show();
 				SetupPruneBasedOnSecondary();
 			}
+			RefreshIdleStatus();
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
@@ -399,7 +537,7 @@ namespace FileDupePruner
 		/////////////////////////////////////////////////////////////////////////////
 		void OnDoNothingChanged()
 		{
-			if (checkBoxDoNothing.Checked)
+			if (checkBoxPreviewOnly.Checked)
 			{
 				MoveDupesButton.Text = "Check for Duplicates";
 			}
@@ -413,6 +551,49 @@ namespace FileDupePruner
 		private void checkBoxDoNothing_CheckedChanged(object sender, EventArgs e)
 		{
 			OnDoNothingChanged();
+		}
+
+		/////////////////////////////////////////////////////////////////////////////
+		private void buttonPrimary_Click(object sender, EventArgs e)
+		{
+			DialogResult result = folderBrowserDialog.ShowDialog(this);
+			if (DialogResult.OK == result)
+			{
+				PrimaryPathTextbox.Text = folderBrowserDialog.SelectedPath;
+			}
+		}
+
+		/////////////////////////////////////////////////////////////////////////////
+		private void buttonSecondary_Click(object sender, EventArgs e)
+		{
+			DialogResult result = folderBrowserDialog.ShowDialog(this);
+			if (DialogResult.OK == result)
+			{
+				SecondaryPathTextbox.Text = folderBrowserDialog.SelectedPath;
+			}
+		}
+
+		/////////////////////////////////////////////////////////////////////////////
+		private void buttonPrune_Click(object sender, EventArgs e)
+		{
+			DialogResult result = folderBrowserDialog.ShowDialog(this);
+			if (DialogResult.OK == result)
+			{
+				PruneDumpTextbox.Text = folderBrowserDialog.SelectedPath;
+			}
+		}
+
+		/////////////////////////////////////////////////////////////////////////////
+		private void buttonCancel_Click(object sender, EventArgs e)
+		{
+			buttonCancel.Hide();
+			backgroundWorker.CancelAsync();
+		}
+
+		/////////////////////////////////////////////////////////////////////////////
+		private void PruneDumpTextbox_TextChanged(object sender, EventArgs e)
+		{
+			RefreshIdleStatus();
 		}
 	}
 }
