@@ -15,6 +15,20 @@ namespace FileDupePruner
 {
 	public partial class MainForm : Form
 	{
+		class ProgressState
+		{
+			public readonly string m_fileA;
+			public readonly string m_fileB;
+			public readonly float m_percent;
+
+			public ProgressState(float percent, string fileA, string fileB)
+			{
+				m_fileA = fileA;
+				m_fileB = fileB;
+				m_percent = percent;
+			}
+		}
+
 		List<TextBox> m_textBoxes = new List<TextBox>();
 
 		/////////////////////////////////////////////////////////////////////////////
@@ -55,6 +69,7 @@ namespace FileDupePruner
 		/////////////////////////////////////////////////////////////////////////////
 		private void backgroundWorker_DoWork(object sender, DoWorkEventArgs e)
 		{
+			BackgroundWorker currentBackgroundWorker = sender as BackgroundWorker;
 			bool previewOnly = checkBoxPreviewOnly.Checked;
 			bool withinSelf = checkBoxWithinSelf.Checked;
 			string primaryPath = PrimaryPathTextbox.Text;
@@ -75,6 +90,13 @@ namespace FileDupePruner
 			GatherAllFiles(primaryPath, ref primaryFilenames);
 			int numPrimaryFiles = primaryFilenames.Count;
 
+			if (currentBackgroundWorker.CancellationPending)
+			{
+				logWriter.Close();
+				e.Cancel = true;
+				return;
+			}
+
 			List<string> secondaryFilenames = new List<string>();
 			if (withinSelf)
 			{
@@ -85,6 +107,13 @@ namespace FileDupePruner
 				GatherAllFiles(secondaryPath, ref secondaryFilenames);
 				logWriter.WriteLine("Primary (" + numPrimaryFiles.ToString() + " files) | Secondary (" + secondaryFilenames.Count.ToString() + " files)");
 				logWriter.WriteLine(primaryPath + " | " + secondaryPath);
+			}
+
+			if (currentBackgroundWorker.CancellationPending)
+			{
+				logWriter.Close();
+				e.Cancel = true;
+				return;
 			}
 
 			logWriter.WriteLine("Prune Dump Folder: " + pruneDumpPath);
@@ -102,25 +131,44 @@ namespace FileDupePruner
 			//Compare files...
 			Dictionary<string, string> filesToPrune = new Dictionary<string, string>();
 			FileStream primaryFileStream, secondaryFileStream;
-			string primaryFileWithoutPath, secondaryFileWithoutPath;
+			string primaryFileWithoutPath, secondaryFileWithoutPath, progressLabel;
 			if (withinSelf)
 			{
 				string primaryFile, secondaryFile;
 				for (int i = 0; i < numPrimaryFiles - 1; ++i)
 				{
+					if (currentBackgroundWorker.CancellationPending)
+					{
+						logWriter.Close();
+						e.Cancel = true;
+						return;
+					}
 					primaryFile = primaryFilenames[i];
 					primaryFileWithoutPath = primaryFile.Substring(primaryPath.Length + 1);
 					primaryFileStream = new FileStream(primaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
 					for (int j = (i + 1); j < numPrimaryFiles; ++j)
 					{
-						++steps;
-						backgroundWorker.ReportProgress(100 * steps / maxSteps);
+						if (currentBackgroundWorker.CancellationPending)
+						{
+							logWriter.Close();
+							primaryFileStream.Close();
+							e.Cancel = true;
+							return;
+						}
+
 						secondaryFile = primaryFilenames[j];
+						secondaryFileWithoutPath = secondaryFile.Substring(primaryPath.Length + 1);
+
+						++steps;
+						Debug.Assert(steps > 0);
+						progressLabel = primaryFileWithoutPath + " | " + secondaryFileWithoutPath;
+						currentBackgroundWorker.ReportProgress(0, new ProgressState((float)steps / (float)maxSteps, primaryFileWithoutPath, secondaryFileWithoutPath));
+						Thread.Sleep(1);
+
 						secondaryFileStream = new FileStream(secondaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
 						if (AreFileStreamsEqual(primaryFileStream, secondaryFileStream))
 						{
-							secondaryFileWithoutPath = secondaryFile.Substring(primaryPath.Length + 1);
-							logWriter.WriteLine("[DUPLICATE] " + primaryFileWithoutPath + " | " + secondaryFileWithoutPath);
+							logWriter.WriteLine("[DUPLICATE] " + progressLabel);
 							if (!filesToPrune.ContainsKey(secondaryFile)) //Maybe it got pruned in a previous pass
 							{
 								string prunedFileNameWithPath = pruneDumpPath + "\\" + secondaryFileWithoutPath;
@@ -136,22 +184,42 @@ namespace FileDupePruner
 			{
 				foreach (string primaryFile in primaryFilenames)
 				{
+					if (currentBackgroundWorker.CancellationPending)
+					{
+						logWriter.Close();
+						e.Cancel = true;
+						return;
+					}
 					primaryFileWithoutPath = primaryFile.Substring(primaryPath.Length + 1);
 					primaryFileStream = new FileStream(primaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
 					foreach (string secondaryFile in secondaryFilenames)
 					{
 						++steps;
-						backgroundWorker.ReportProgress(100 * steps / maxSteps);
+
+						if (currentBackgroundWorker.CancellationPending)
+						{
+							logWriter.Close();
+							primaryFileStream.Close();
+							e.Cancel = true;
+							return;
+						}
+
 						if (primaryFile.Equals(secondaryFile))
 						{
 							//This can happen if the user specifies a nested folder as a secondary or primary
 							continue;
 						}
+
+						secondaryFileWithoutPath = secondaryFile.Substring(secondaryPath.Length + 1);
+						Debug.Assert(steps > 0);
+						progressLabel = primaryFileWithoutPath + " | " + secondaryFileWithoutPath;
+						currentBackgroundWorker.ReportProgress(0, new ProgressState((float)steps / (float)maxSteps, primaryFileWithoutPath, secondaryFileWithoutPath));
+						Thread.Sleep(1);
+
 						secondaryFileStream = new FileStream(secondaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
 						if (AreFileStreamsEqual(primaryFileStream, secondaryFileStream))
 						{
-							secondaryFileWithoutPath = secondaryFile.Substring(secondaryPath.Length + 1);
-							logWriter.WriteLine("[DUPLICATE] " + primaryFileWithoutPath + " | " + secondaryFileWithoutPath);
+							logWriter.WriteLine("[DUPLICATE] " + progressLabel);
 							if (!filesToPrune.ContainsKey(secondaryFile)) //Maybe it got pruned in a previous pass
 							{
 								string prunedFileNameWithPath = pruneDumpPath + "\\" + secondaryFileWithoutPath;
@@ -174,6 +242,13 @@ namespace FileDupePruner
 				Dictionary<string, string>.Enumerator pruneIterator = filesToPrune.GetEnumerator();
 				while (pruneIterator.MoveNext())
 				{
+					if (currentBackgroundWorker.CancellationPending)
+					{
+						logWriter.Close();
+						e.Cancel = true;
+						return;
+					}
+
 					sourcePath = pruneIterator.Current.Key;
 					prunedFileNameWithPath = pruneIterator.Current.Value;
 					prunedDirectoryName = Path.GetDirectoryName(prunedFileNameWithPath);
@@ -205,18 +280,29 @@ namespace FileDupePruner
 		/////////////////////////////////////////////////////////////////////////////
 		private void backgroundWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
 		{
-			int percentage = e.ProgressPercentage;
-			ProgressLabel.Text = "Progress: " + percentage + "%";
-			pruneProgressBar.Value = percentage;
+			ProgressState progressState = e.UserState as ProgressState;
+			string status = "Progress: " + (100.0f * progressState.m_percent).ToString() + "%";
+			status += "\nComparing " + progressState.m_fileA;
+			status += "\nto " + progressState.m_fileB;
+			ProgressLabel.Text = status;
+			pruneProgressBar.Value = (int)Math.Round(progressState.m_percent * (float)pruneProgressBar.Maximum);
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
 		private void backgroundWorker_Completed(object sender, RunWorkerCompletedEventArgs e)
 		{
 			buttonCancel.Hide();
-			MessageBox.Show(this, "All done!");
+			if (e.Cancelled)
+			{
+				MessageBox.Show(this, "Why you cancel???");
+			}
+			else
+			{
+				MessageBox.Show(this, "All done!");
+			}
 
 			pruneProgressBar.Value = 0;
+			SetControlsEnabled(true);
 			RefreshIdleStatus();
 			Cursor.Current = Cursors.Default;
 
@@ -269,10 +355,24 @@ namespace FileDupePruner
 
 			ProgressLabel.Text = "Gathering Files to Evaluate";
 			pruneProgressBar.Value = 0;
-			MoveDupesButton.Enabled = false;
+			SetControlsEnabled(false);
 			Cursor.Current = Cursors.WaitCursor;
 			backgroundWorker.RunWorkerAsync();
 			buttonCancel.Show();
+		}
+
+		/////////////////////////////////////////////////////////////////////////////
+		void SetControlsEnabled(bool enabled)
+		{
+			MoveDupesButton.Enabled = enabled;
+			checkBoxPreviewOnly.Enabled = enabled;
+			checkBoxWithinSelf.Enabled = enabled;
+			PrimaryPathTextbox.Enabled = enabled;
+			buttonPrimary.Enabled = enabled;
+			SecondaryPathTextbox.Enabled = enabled;
+			buttonSecondary.Enabled = enabled;
+			PruneDumpTextbox.Enabled = enabled;
+			buttonPrune.Enabled = enabled;
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
@@ -587,7 +687,10 @@ namespace FileDupePruner
 		private void buttonCancel_Click(object sender, EventArgs e)
 		{
 			buttonCancel.Hide();
-			backgroundWorker.CancelAsync();
+			if (backgroundWorker.IsBusy)
+			{
+				backgroundWorker.CancelAsync();
+			}
 		}
 
 		/////////////////////////////////////////////////////////////////////////////

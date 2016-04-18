@@ -60,7 +60,7 @@
 			// pruneProgressBar
 			// 
 			this.pruneProgressBar.Location = new System.Drawing.Point(15, 257);
-			this.pruneProgressBar.MarqueeAnimationSpeed = 1000;
+			this.pruneProgressBar.Maximum = 1000;
 			this.pruneProgressBar.Name = "pruneProgressBar";
 			this.pruneProgressBar.Size = new System.Drawing.Size(646, 21);
 			this.pruneProgressBar.Step = 1;
@@ -69,12 +69,15 @@
 			// 
 			// ProgressLabel
 			// 
+			this.ProgressLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
 			this.ProgressLabel.AutoSize = true;
-			this.ProgressLabel.Location = new System.Drawing.Point(12, 241);
+			this.ProgressLabel.Location = new System.Drawing.Point(12, 204);
+			this.ProgressLabel.MinimumSize = new System.Drawing.Size(650, 50);
 			this.ProgressLabel.Name = "ProgressLabel";
-			this.ProgressLabel.Size = new System.Drawing.Size(48, 13);
+			this.ProgressLabel.Size = new System.Drawing.Size(650, 50);
 			this.ProgressLabel.TabIndex = 2;
 			this.ProgressLabel.Text = "Progress";
+			this.ProgressLabel.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
 			// 
 			// PrimaryPathTextbox
 			// 
@@ -234,6 +237,8 @@
 			this.Controls.Add(this.ProgressLabel);
 			this.Controls.Add(this.pruneProgressBar);
 			this.Controls.Add(this.MoveDupesButton);
+			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+			this.MaximizeBox = false;
 			this.Name = "MainForm";
 			this.Text = "File Dupe Pruner";
 			this.Load += new System.EventHandler(this.MainForm_Load);
