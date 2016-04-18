@@ -3,3 +3,4 @@ FileDupePruner\FileDupePruner\bin\Debug
 .vs
 *.pdb
 *.vshost.*
+FileDupePruner.exe.config
