@@ -559,7 +559,10 @@ namespace FileDupePruner
 		/////////////////////////////////////////////////////////////////////////////
 		private void PrimaryPathTextbox_TextChanged(object sender, EventArgs e)
 		{
-			SetupPruneBasedOnPrimary();
+			if (checkBoxWithinSelf.Checked)
+			{
+				SetupPruneBasedOnPrimary();
+			}
 			RefreshIdleStatus();
 		}
 
@@ -585,7 +588,10 @@ namespace FileDupePruner
 		/////////////////////////////////////////////////////////////////////////////
 		private void SecondaryPathTextbox_TextChanged(object sender, EventArgs e)
 		{
-			SetupPruneBasedOnSecondary();
+			if (!checkBoxWithinSelf.Checked)
+			{
+				SetupPruneBasedOnSecondary();
+			}
 			RefreshIdleStatus();
 		}
 
