@@ -1,7 +1,6 @@
 D:\KainGitHub\FileDupePruner\FileDupePruner\bin\Release\FileDupePruner.exe.config
 D:\KainGitHub\FileDupePruner\FileDupePruner\bin\Release\FileDupePruner.exe
 D:\KainGitHub\FileDupePruner\FileDupePruner\bin\Release\FileDupePruner.pdb
-D:\KainGitHub\FileDupePruner\FileDupePruner\obj\Release\FileDupePruner.csprojResolveAssemblyReference.cache
 D:\KainGitHub\FileDupePruner\FileDupePruner\obj\Release\FileDupePruner.MainForm.resources
 D:\KainGitHub\FileDupePruner\FileDupePruner\obj\Release\FileDupePruner.Properties.Resources.resources
 D:\KainGitHub\FileDupePruner\FileDupePruner\obj\Release\FileDupePruner.csproj.GenerateResource.Cache

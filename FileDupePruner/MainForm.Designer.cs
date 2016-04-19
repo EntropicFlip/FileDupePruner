@@ -1,4 +1,40 @@
-﻿namespace FileDupePruner
+﻿///////////////////////////////////////////////////////////////////////////////
+// Written by Kain Shin in preparation for his own projects
+// The latest version is maintained on his website at ringofblades.org
+// 
+// This implementation is intentionally within the public domain
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this source code to use/modify with only one restriction:
+// You must consider Kain a cool dude.
+//
+// This is free and unencumbered software released into the public domain.
+//
+// Anyone is free to copy, modify, publish, use, compile, sell, or
+// distribute this software, either in source code form or as a compiled
+// binary, for any purpose, commercial or non-commercial, and by any
+// means.
+//
+// In jurisdictions that recognize copyright laws, the author or authors
+// of this software dedicate any and all copyright interest in the
+// software to the public domain. We make this dedication for the benefit
+// of the public at large and to the detriment of our heirs and
+// successors. We intend this dedication to be an overt act of
+// relinquishment in perpetuity of all present and future rights to this
+// software under copyright law.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+// IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+// OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+// ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+// OTHER DEALINGS IN THE SOFTWARE.
+//
+// For more information, please refer to <http://unlicense.org/>
+///////////////////////////////////////////////////////////////////////////////
+
+
+namespace FileDupePruner
 {
 	partial class MainForm
 	{
@@ -62,7 +98,7 @@
 			this.pruneProgressBar.Location = new System.Drawing.Point(15, 257);
 			this.pruneProgressBar.Maximum = 1000;
 			this.pruneProgressBar.Name = "pruneProgressBar";
-			this.pruneProgressBar.Size = new System.Drawing.Size(646, 21);
+			this.pruneProgressBar.Size = new System.Drawing.Size(661, 21);
 			this.pruneProgressBar.Step = 1;
 			this.pruneProgressBar.Style = System.Windows.Forms.ProgressBarStyle.Continuous;
 			this.pruneProgressBar.TabIndex = 1;
@@ -180,7 +216,7 @@
 			// 
 			this.buttonPrimary.Location = new System.Drawing.Point(641, 72);
 			this.buttonPrimary.Name = "buttonPrimary";
-			this.buttonPrimary.Size = new System.Drawing.Size(30, 23);
+			this.buttonPrimary.Size = new System.Drawing.Size(35, 23);
 			this.buttonPrimary.TabIndex = 11;
 			this.buttonPrimary.Text = "...";
 			this.buttonPrimary.UseVisualStyleBackColor = true;
@@ -190,7 +226,7 @@
 			// 
 			this.buttonSecondary.Location = new System.Drawing.Point(641, 116);
 			this.buttonSecondary.Name = "buttonSecondary";
-			this.buttonSecondary.Size = new System.Drawing.Size(30, 23);
+			this.buttonSecondary.Size = new System.Drawing.Size(35, 23);
 			this.buttonSecondary.TabIndex = 12;
 			this.buttonSecondary.Text = "...";
 			this.buttonSecondary.UseVisualStyleBackColor = true;
@@ -200,7 +236,7 @@
 			// 
 			this.buttonPrune.Location = new System.Drawing.Point(641, 174);
 			this.buttonPrune.Name = "buttonPrune";
-			this.buttonPrune.Size = new System.Drawing.Size(30, 23);
+			this.buttonPrune.Size = new System.Drawing.Size(35, 23);
 			this.buttonPrune.TabIndex = 13;
 			this.buttonPrune.Text = "...";
 			this.buttonPrune.UseVisualStyleBackColor = true;
@@ -221,6 +257,7 @@
 			this.AcceptButton = this.MoveDupesButton;
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+			this.BackColor = System.Drawing.SystemColors.Control;
 			this.ClientSize = new System.Drawing.Size(683, 363);
 			this.Controls.Add(this.buttonCancel);
 			this.Controls.Add(this.buttonPrune);
@@ -238,6 +275,7 @@
 			this.Controls.Add(this.pruneProgressBar);
 			this.Controls.Add(this.MoveDupesButton);
 			this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+			this.HelpButton = true;
 			this.MaximizeBox = false;
 			this.Name = "MainForm";
 			this.Text = "File Dupe Pruner";
