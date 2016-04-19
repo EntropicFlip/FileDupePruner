@@ -64,6 +64,7 @@ namespace FileDupePruner
 		/// </summary>
 		private void InitializeComponent()
 		{
+			this.components = new System.ComponentModel.Container();
 			this.MoveDupesButton = new System.Windows.Forms.Button();
 			this.pruneProgressBar = new System.Windows.Forms.ProgressBar();
 			this.ProgressLabel = new System.Windows.Forms.Label();
@@ -81,6 +82,8 @@ namespace FileDupePruner
 			this.buttonSecondary = new System.Windows.Forms.Button();
 			this.buttonPrune = new System.Windows.Forms.Button();
 			this.buttonCancel = new System.Windows.Forms.Button();
+			this.checkBoxNameCompare = new System.Windows.Forms.CheckBox();
+			this.toolTips = new System.Windows.Forms.ToolTip(this.components);
 			this.SuspendLayout();
 			// 
 			// MoveDupesButton
@@ -182,20 +185,20 @@ namespace FileDupePruner
 			this.checkBoxPreviewOnly.CheckState = System.Windows.Forms.CheckState.Checked;
 			this.checkBoxPreviewOnly.Location = new System.Drawing.Point(15, 12);
 			this.checkBoxPreviewOnly.Name = "checkBoxPreviewOnly";
-			this.checkBoxPreviewOnly.Size = new System.Drawing.Size(177, 17);
+			this.checkBoxPreviewOnly.Size = new System.Drawing.Size(132, 17);
 			this.checkBoxPreviewOnly.TabIndex = 9;
-			this.checkBoxPreviewOnly.Text = "Preview Only (generate log files)";
+			this.checkBoxPreviewOnly.Text = "Preview Only (log files)";
 			this.checkBoxPreviewOnly.UseVisualStyleBackColor = true;
 			this.checkBoxPreviewOnly.CheckedChanged += new System.EventHandler(this.checkBoxDoNothing_CheckedChanged);
 			// 
 			// checkBoxWithinSelf
 			// 
 			this.checkBoxWithinSelf.AutoSize = true;
-			this.checkBoxWithinSelf.Location = new System.Drawing.Point(283, 12);
+			this.checkBoxWithinSelf.Location = new System.Drawing.Point(238, 12);
 			this.checkBoxWithinSelf.Name = "checkBoxWithinSelf";
-			this.checkBoxWithinSelf.Size = new System.Drawing.Size(216, 17);
+			this.checkBoxWithinSelf.Size = new System.Drawing.Size(148, 17);
 			this.checkBoxWithinSelf.TabIndex = 10;
-			this.checkBoxWithinSelf.Text = "Check for Duplicates within Primary Only";
+			this.checkBoxWithinSelf.Text = "Check within Primary Only";
 			this.checkBoxWithinSelf.UseVisualStyleBackColor = true;
 			this.checkBoxWithinSelf.CheckedChanged += new System.EventHandler(this.checkBoxWithinSelf_CheckedChanged);
 			// 
@@ -252,6 +255,20 @@ namespace FileDupePruner
 			this.buttonCancel.UseVisualStyleBackColor = true;
 			this.buttonCancel.Click += new System.EventHandler(this.buttonCancel_Click);
 			// 
+			// checkBoxNameCompare
+			// 
+			this.checkBoxNameCompare.AutoSize = true;
+			this.checkBoxNameCompare.Location = new System.Drawing.Point(449, 12);
+			this.checkBoxNameCompare.Name = "checkBoxNameCompare";
+			this.checkBoxNameCompare.Size = new System.Drawing.Size(207, 17);
+			this.checkBoxNameCompare.TabIndex = 15;
+			this.checkBoxNameCompare.Text = "Compare Filenames instead of Content";
+			this.checkBoxNameCompare.UseVisualStyleBackColor = true;
+			// 
+			// toolTips
+			// 
+			this.toolTips.ShowAlways = true;
+			// 
 			// MainForm
 			// 
 			this.AcceptButton = this.MoveDupesButton;
@@ -259,6 +276,7 @@ namespace FileDupePruner
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.SystemColors.Control;
 			this.ClientSize = new System.Drawing.Size(683, 363);
+			this.Controls.Add(this.checkBoxNameCompare);
 			this.Controls.Add(this.buttonCancel);
 			this.Controls.Add(this.buttonPrune);
 			this.Controls.Add(this.buttonSecondary);
@@ -304,6 +322,8 @@ namespace FileDupePruner
 		private System.Windows.Forms.Button buttonSecondary;
 		private System.Windows.Forms.Button buttonPrune;
 		private System.Windows.Forms.Button buttonCancel;
+		private System.Windows.Forms.CheckBox checkBoxNameCompare;
+		private System.Windows.Forms.ToolTip toolTips;
 	}
 }
 

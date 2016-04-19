@@ -83,6 +83,10 @@ namespace FileDupePruner
 			buttonCancel.Hide();
 			OnWithinSelfChanged();
 			OnDoNothingChanged();
+
+			toolTips.SetToolTip(checkBoxPreviewOnly, "Checked: Generate log, but move nothing\nUnchecked: Generate log and move duplicates");
+			toolTips.SetToolTip(checkBoxWithinSelf, "Checked: Check Primary for duplicates within itself\nUnchecked: Check Secondary for duplicates of any Primary file");
+			toolTips.SetToolTip(checkBoxNameCompare, "Checked: Compare names, ignore content\nUnchecked: Ignore names, compare content");
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
@@ -107,18 +111,45 @@ namespace FileDupePruner
 			BackgroundWorker currentBackgroundWorker = sender as BackgroundWorker;
 			bool previewOnly = checkBoxPreviewOnly.Checked;
 			bool withinSelf = checkBoxWithinSelf.Checked;
+			bool doingNameCompare = checkBoxNameCompare.Checked;
 			string primaryPath = PrimaryPathTextbox.Text;
 			string secondaryPath = SecondaryPathTextbox.Text;
 			string pruneDumpPath = PruneDumpTextbox.Text;
 
 			//Set up log...
-			string prunedFilesLogName = previewOnly
-										? pruneDumpPath + "\\PrunePreview.log"
-										: pruneDumpPath + "\\PrunedFiles.log";
+			string prunedFilesLogName = pruneDumpPath;
+
+			if (previewOnly)
+			{
+				prunedFilesLogName += "\\PrunePreview";
+			}
+			else
+			{
+				prunedFilesLogName += "\\PrunedFiles";
+			}
+
+			if (doingNameCompare)
+			{
+				prunedFilesLogName += "NameCompare";
+			}
+			else
+			{
+				prunedFilesLogName += "BinaryCompare";
+			}
+
+			prunedFilesLogName += ".log";
+
 			StreamWriter logWriter = File.CreateText(prunedFilesLogName);
 			logWriter.AutoFlush = true;
 
-			logWriter.WriteLine("Date: " + System.DateTime.Now.ToString());
+			if (doingNameCompare)
+			{
+				logWriter.WriteLine("Comparing filenames on " + System.DateTime.Now.ToString());
+			}
+			else
+			{
+				logWriter.WriteLine("Comparing binary content on " + System.DateTime.Now.ToString());
+			}
 
 			//Gather files...
 			List<string> primaryFilenames = new List<string>();
@@ -165,8 +196,10 @@ namespace FileDupePruner
 
 			//Compare files...
 			Dictionary<string, string> filesToPrune = new Dictionary<string, string>();
-			FileStream primaryFileStream, secondaryFileStream;
-			string primaryFileWithoutPath, secondaryFileWithoutPath, progressLabel;
+			FileStream primaryFileStream = null;
+			FileStream secondaryFileStream = null;
+			bool dupeDetected;
+			string primaryFileWithoutRoot, secondaryFileWithoutRoot, progressLabel;
 			if (withinSelf)
 			{
 				string primaryFile, secondaryFile;
@@ -179,40 +212,58 @@ namespace FileDupePruner
 						return;
 					}
 					primaryFile = primaryFilenames[i];
-					primaryFileWithoutPath = primaryFile.Substring(primaryPath.Length + 1);
-					primaryFileStream = new FileStream(primaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+					primaryFileWithoutRoot = primaryFile.Substring(primaryPath.Length + 1);
+					if (!doingNameCompare)
+					{
+						primaryFileStream = new FileStream(primaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+					}
 					for (int j = (i + 1); j < numPrimaryFiles; ++j)
 					{
 						if (currentBackgroundWorker.CancellationPending)
 						{
 							logWriter.Close();
-							primaryFileStream.Close();
+							if (!doingNameCompare)
+							{
+								primaryFileStream.Close();
+							}
 							e.Cancel = true;
 							return;
 						}
 
 						secondaryFile = primaryFilenames[j];
-						secondaryFileWithoutPath = secondaryFile.Substring(primaryPath.Length + 1);
+						secondaryFileWithoutRoot = secondaryFile.Substring(primaryPath.Length + 1);
 
 						++steps;
 						Debug.Assert(steps > 0);
-						progressLabel = primaryFileWithoutPath + " | " + secondaryFileWithoutPath;
-						currentBackgroundWorker.ReportProgress(0, new ProgressState((float)steps / (float)maxSteps, primaryFileWithoutPath, secondaryFileWithoutPath));
+						progressLabel = primaryFileWithoutRoot + " | " + secondaryFileWithoutRoot;
+						currentBackgroundWorker.ReportProgress(0, new ProgressState((float)steps / (float)maxSteps, primaryFileWithoutRoot, secondaryFileWithoutRoot));
 						Thread.Sleep(1);
 
-						secondaryFileStream = new FileStream(secondaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
-						if (AreFileStreamsEqual(primaryFileStream, secondaryFileStream))
+						if (doingNameCompare)
+						{
+							dupeDetected = Path.GetFileName(primaryFile) == Path.GetFileName(secondaryFile);
+						}
+						else
+						{
+							secondaryFileStream = new FileStream(secondaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+							dupeDetected = AreFileStreamsEqual(primaryFileStream, secondaryFileStream);
+							secondaryFileStream.Close();
+						}
+						if (dupeDetected)
 						{
 							logWriter.WriteLine("[DUPLICATE] " + progressLabel);
 							if (!filesToPrune.ContainsKey(secondaryFile)) //Maybe it got pruned in a previous pass
 							{
-								string prunedFileNameWithPath = pruneDumpPath + "\\" + secondaryFileWithoutPath;
+								string prunedFileNameWithPath = pruneDumpPath + "\\" + secondaryFileWithoutRoot;
 								filesToPrune.Add(secondaryFile, prunedFileNameWithPath);
 							}
 						}
-						secondaryFileStream.Close();
 					}
-					primaryFileStream.Close();
+
+					if (!doingNameCompare)
+					{
+						primaryFileStream.Close();
+					}
 				}
 			}
 			else
@@ -225,8 +276,11 @@ namespace FileDupePruner
 						e.Cancel = true;
 						return;
 					}
-					primaryFileWithoutPath = primaryFile.Substring(primaryPath.Length + 1);
-					primaryFileStream = new FileStream(primaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+					primaryFileWithoutRoot = primaryFile.Substring(primaryPath.Length + 1);
+					if (!doingNameCompare)
+					{
+						primaryFileStream = new FileStream(primaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+					}
 					foreach (string secondaryFile in secondaryFilenames)
 					{
 						++steps;
@@ -234,7 +288,10 @@ namespace FileDupePruner
 						if (currentBackgroundWorker.CancellationPending)
 						{
 							logWriter.Close();
-							primaryFileStream.Close();
+							if (!doingNameCompare)
+							{
+								primaryFileStream.Close();
+							}
 							e.Cancel = true;
 							return;
 						}
@@ -245,25 +302,37 @@ namespace FileDupePruner
 							continue;
 						}
 
-						secondaryFileWithoutPath = secondaryFile.Substring(secondaryPath.Length + 1);
+						secondaryFileWithoutRoot = secondaryFile.Substring(secondaryPath.Length + 1);
 						Debug.Assert(steps > 0);
-						progressLabel = primaryFileWithoutPath + " | " + secondaryFileWithoutPath;
-						currentBackgroundWorker.ReportProgress(0, new ProgressState((float)steps / (float)maxSteps, primaryFileWithoutPath, secondaryFileWithoutPath));
+						progressLabel = primaryFileWithoutRoot + " | " + secondaryFileWithoutRoot;
+						currentBackgroundWorker.ReportProgress(0, new ProgressState((float)steps / (float)maxSteps, primaryFileWithoutRoot, secondaryFileWithoutRoot));
 						Thread.Sleep(1);
 
-						secondaryFileStream = new FileStream(secondaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
-						if (AreFileStreamsEqual(primaryFileStream, secondaryFileStream))
+						if (doingNameCompare)
+						{
+							dupeDetected = Path.GetFileName(primaryFile) == Path.GetFileName(secondaryFile);
+						}
+						else
+						{
+							secondaryFileStream = new FileStream(secondaryFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+							dupeDetected = AreFileStreamsEqual(primaryFileStream, secondaryFileStream);
+							secondaryFileStream.Close();
+						}
+
+						if (dupeDetected)
 						{
 							logWriter.WriteLine("[DUPLICATE] " + progressLabel);
 							if (!filesToPrune.ContainsKey(secondaryFile)) //Maybe it got pruned in a previous pass
 							{
-								string prunedFileNameWithPath = pruneDumpPath + "\\" + secondaryFileWithoutPath;
+								string prunedFileNameWithPath = pruneDumpPath + "\\" + secondaryFileWithoutRoot;
 								filesToPrune.Add(secondaryFile, prunedFileNameWithPath);
 							}
 						}
-						secondaryFileStream.Close();
 					}
-					primaryFileStream.Close();
+					if (!doingNameCompare)
+					{
+						primaryFileStream.Close();
+					}
 				}
 			}
 
@@ -402,6 +471,7 @@ namespace FileDupePruner
 			MoveDupesButton.Enabled = enabled;
 			checkBoxPreviewOnly.Enabled = enabled;
 			checkBoxWithinSelf.Enabled = enabled;
+			checkBoxNameCompare.Enabled = enabled;
 			PrimaryPathTextbox.Enabled = enabled;
 			buttonPrimary.Enabled = enabled;
 			SecondaryPathTextbox.Enabled = enabled;
