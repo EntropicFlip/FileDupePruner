@@ -751,10 +751,12 @@ namespace FileDupePruner
 			if (checkBoxPreviewOnly.Checked)
 			{
 				MoveDupesButton.Text = "Check for Duplicates";
+				Text = "File Dupe Detector";
 			}
 			else
 			{
 				MoveDupesButton.Text = "Move Duplicates";
+				Text = "File Dupe Pruner";
 			}
 		}
 
