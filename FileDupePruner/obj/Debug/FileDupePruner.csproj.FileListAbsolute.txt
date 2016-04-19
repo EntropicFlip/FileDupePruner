@@ -1,8 +1,0 @@
-D:\KainGitHub\FileDupePruner\FileDupePruner\bin\Debug\FileDupePruner.exe.config
-D:\KainGitHub\FileDupePruner\FileDupePruner\bin\Debug\FileDupePruner.exe
-D:\KainGitHub\FileDupePruner\FileDupePruner\bin\Debug\FileDupePruner.pdb
-D:\KainGitHub\FileDupePruner\FileDupePruner\obj\Debug\FileDupePruner.MainForm.resources
-D:\KainGitHub\FileDupePruner\FileDupePruner\obj\Debug\FileDupePruner.Properties.Resources.resources
-D:\KainGitHub\FileDupePruner\FileDupePruner\obj\Debug\FileDupePruner.csproj.GenerateResource.Cache
-D:\KainGitHub\FileDupePruner\FileDupePruner\obj\Debug\FileDupePruner.exe
-D:\KainGitHub\FileDupePruner\FileDupePruner\obj\Debug\FileDupePruner.pdb
