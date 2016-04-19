@@ -1,6 +1,6 @@
 ﻿///////////////////////////////////////////////////////////////////////////////
 // Written by Kain Shin in preparation for his own projects
-// The latest version is maintained on his website at ringofblades.org
+// The latest version is maintained at https://github.com/EntropicFlip/FileDupePruner
 // 
 // This implementation is intentionally within the public domain
 // Permission is hereby granted, free of charge, to any person obtaining a
