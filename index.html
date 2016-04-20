@@ -37,22 +37,30 @@
 <p>Choose "View Raw"
 <a href="https://github.com/EntropicFlip/FileDupePruner/blob/master/FileDupePruner/bin/Release/FileDupePruner.exe">https://github.com/EntropicFlip/FileDupePruner/blob/master/FileDupePruner/bin/Release/FileDupePruner.exe</a></p>
 
-<h3>
-<a id="the-problem" class="anchor" href="#the-problem" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The Problem</h3>
+<h1>
+<a id="the-problem" class="anchor" href="#the-problem" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>The Problem</h1>
 
 <p>Automated cloud services can sometimes lead to scenarios where copies of files are automatically made with different names.</p>
 
 <p>These redundant files take up space, and it can be daunting to have to sort these files out for manual pruning after months of this (or longer). In my case, I have my phone auto-uploading to dropbox, and this means I have nicely named files in my dropbox account, but a lot of DCIM_ files on my phone that are likely duplicates of the dropbox files, but not always. Phones get full, and those files need to be purged after awhile, but simply deleting those all videos and photos on my phone seems scary. So I wrote this tool for peace of mind to make sure that what I'm deleting from my phone is actually something that exists somewhere else.</p>
 
-<h3>
-<a id="file-dupe-pruner" class="anchor" href="#file-dupe-pruner" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>File Dupe Pruner</h3>
+<h1>
+<a id="file-dupe-pruner" class="anchor" href="#file-dupe-pruner" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>File Dupe Pruner</h1>
 
 <p>This tool will identify those duplicates at the binary level (ignoring filenames) and give you the option to move them to another folder that you can manually delete after inspection.
 <img src="http://4.bp.blogspot.com/-DYLMRrFC9l0/Vxfs2CiCNhI/AAAAAAAAH74/A6eBqaugA2cRKAbaBkUywOEYBJeqxpk0gCK4B/s1600/Pruner.PNG" alt="Screenshot"></p>
 
+<h2>
+<a id="one-folder-or-two" class="anchor" href="#one-folder-or-two" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>One folder or two</h2>
+
 <p>You can either evaluate two folders, leaving the primary folder intact, or you can evaluate a single folder for any duplicates within itself. All folder evaluations will recursively include nested subfolders.</p>
 
-<p>You can optionally specify filtering by file extension in case you are comparing only certain types of files.</p>
+<h2>
+<a id="filtering-by-file-extensions" class="anchor" href="#filtering-by-file-extensions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Filtering by file extensions</h2>
+
+<p>You can optionally specify filtering by file extension in case you are comparing only certain types of files.
+You can specify multiple extensions by separating with commas or spaces.
+Including "*." in your extensions is not necessary, but you are free to put that in if it makes you feel better.</p>
 
 <h3>
 <a id="who-am-i" class="anchor" href="#who-am-i" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Who am I?</h3>
