@@ -97,8 +97,8 @@ namespace FileDupePruner
 			toolTips.SetToolTip(checkBoxWithinSelf, "Checked: Check Primary for duplicates within itself\nUnchecked: Check Secondary for duplicates of any Primary file");
 			toolTips.SetToolTip(checkBoxNameCompare, "Checked: Compare names, ignore content\nUnchecked: Ignore names, compare content");
 			toolTips.SetToolTip(checkBoxFilters, "Checked: Compare only files with certain names\nUnchecked: Compare all files");
-			toolTips.SetToolTip(labelPatternsInclude, "Include only files that match this pattern (leave blank to match any file)");
-			toolTips.SetToolTip(labelPatternsExclude, "Ignore files that match this pattern even if it matches an included pattern");
+			toolTips.SetToolTip(labelPatternsInclude, "Include only files with these extensions (leave blank to match any file)");
+			toolTips.SetToolTip(labelPatternsExclude, "Ignore files with these extensions");
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
