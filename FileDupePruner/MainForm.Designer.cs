@@ -84,11 +84,16 @@ namespace FileDupePruner
 			this.buttonCancel = new System.Windows.Forms.Button();
 			this.checkBoxNameCompare = new System.Windows.Forms.CheckBox();
 			this.toolTips = new System.Windows.Forms.ToolTip(this.components);
+			this.checkBoxFilters = new System.Windows.Forms.CheckBox();
+			this.textBoxPatternsInclude = new System.Windows.Forms.TextBox();
+			this.labelPatternsInclude = new System.Windows.Forms.Label();
+			this.labelPatternsExclude = new System.Windows.Forms.Label();
+			this.textBoxPatternsExclude = new System.Windows.Forms.TextBox();
 			this.SuspendLayout();
 			// 
 			// MoveDupesButton
 			// 
-			this.MoveDupesButton.Location = new System.Drawing.Point(472, 297);
+			this.MoveDupesButton.Location = new System.Drawing.Point(482, 313);
 			this.MoveDupesButton.Name = "MoveDupesButton";
 			this.MoveDupesButton.Size = new System.Drawing.Size(189, 33);
 			this.MoveDupesButton.TabIndex = 0;
@@ -98,7 +103,7 @@ namespace FileDupePruner
 			// 
 			// pruneProgressBar
 			// 
-			this.pruneProgressBar.Location = new System.Drawing.Point(15, 257);
+			this.pruneProgressBar.Location = new System.Drawing.Point(15, 277);
 			this.pruneProgressBar.Maximum = 1000;
 			this.pruneProgressBar.Name = "pruneProgressBar";
 			this.pruneProgressBar.Size = new System.Drawing.Size(661, 21);
@@ -110,7 +115,7 @@ namespace FileDupePruner
 			// 
 			this.ProgressLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
 			this.ProgressLabel.AutoSize = true;
-			this.ProgressLabel.Location = new System.Drawing.Point(12, 204);
+			this.ProgressLabel.Location = new System.Drawing.Point(12, 224);
 			this.ProgressLabel.MinimumSize = new System.Drawing.Size(650, 50);
 			this.ProgressLabel.Name = "ProgressLabel";
 			this.ProgressLabel.Size = new System.Drawing.Size(650, 50);
@@ -121,7 +126,7 @@ namespace FileDupePruner
 			// PrimaryPathTextbox
 			// 
 			this.PrimaryPathTextbox.AllowDrop = true;
-			this.PrimaryPathTextbox.Location = new System.Drawing.Point(15, 75);
+			this.PrimaryPathTextbox.Location = new System.Drawing.Point(15, 102);
 			this.PrimaryPathTextbox.Name = "PrimaryPathTextbox";
 			this.PrimaryPathTextbox.Size = new System.Drawing.Size(620, 20);
 			this.PrimaryPathTextbox.TabIndex = 3;
@@ -132,7 +137,7 @@ namespace FileDupePruner
 			// SecondaryPathTextbox
 			// 
 			this.SecondaryPathTextbox.AllowDrop = true;
-			this.SecondaryPathTextbox.Location = new System.Drawing.Point(15, 119);
+			this.SecondaryPathTextbox.Location = new System.Drawing.Point(15, 150);
 			this.SecondaryPathTextbox.Name = "SecondaryPathTextbox";
 			this.SecondaryPathTextbox.Size = new System.Drawing.Size(620, 20);
 			this.SecondaryPathTextbox.TabIndex = 4;
@@ -143,7 +148,7 @@ namespace FileDupePruner
 			// PrimaryLabel
 			// 
 			this.PrimaryLabel.AutoSize = true;
-			this.PrimaryLabel.Location = new System.Drawing.Point(12, 50);
+			this.PrimaryLabel.Location = new System.Drawing.Point(12, 86);
 			this.PrimaryLabel.Name = "PrimaryLabel";
 			this.PrimaryLabel.Size = new System.Drawing.Size(134, 13);
 			this.PrimaryLabel.TabIndex = 5;
@@ -152,7 +157,7 @@ namespace FileDupePruner
 			// SecondaryLabel
 			// 
 			this.SecondaryLabel.AutoSize = true;
-			this.SecondaryLabel.Location = new System.Drawing.Point(12, 103);
+			this.SecondaryLabel.Location = new System.Drawing.Point(12, 134);
 			this.SecondaryLabel.Name = "SecondaryLabel";
 			this.SecondaryLabel.Size = new System.Drawing.Size(301, 13);
 			this.SecondaryLabel.TabIndex = 6;
@@ -161,7 +166,7 @@ namespace FileDupePruner
 			// PruneDumpTextbox
 			// 
 			this.PruneDumpTextbox.AllowDrop = true;
-			this.PruneDumpTextbox.Location = new System.Drawing.Point(15, 174);
+			this.PruneDumpTextbox.Location = new System.Drawing.Point(15, 191);
 			this.PruneDumpTextbox.Name = "PruneDumpTextbox";
 			this.PruneDumpTextbox.Size = new System.Drawing.Size(620, 20);
 			this.PruneDumpTextbox.TabIndex = 7;
@@ -172,7 +177,7 @@ namespace FileDupePruner
 			// PruneDumpLabel
 			// 
 			this.PruneDumpLabel.AutoSize = true;
-			this.PruneDumpLabel.Location = new System.Drawing.Point(12, 158);
+			this.PruneDumpLabel.Location = new System.Drawing.Point(12, 175);
 			this.PruneDumpLabel.Name = "PruneDumpLabel";
 			this.PruneDumpLabel.Size = new System.Drawing.Size(132, 13);
 			this.PruneDumpLabel.TabIndex = 8;
@@ -217,7 +222,7 @@ namespace FileDupePruner
 			// 
 			// buttonPrimary
 			// 
-			this.buttonPrimary.Location = new System.Drawing.Point(641, 72);
+			this.buttonPrimary.Location = new System.Drawing.Point(641, 99);
 			this.buttonPrimary.Name = "buttonPrimary";
 			this.buttonPrimary.Size = new System.Drawing.Size(35, 23);
 			this.buttonPrimary.TabIndex = 11;
@@ -227,7 +232,7 @@ namespace FileDupePruner
 			// 
 			// buttonSecondary
 			// 
-			this.buttonSecondary.Location = new System.Drawing.Point(641, 116);
+			this.buttonSecondary.Location = new System.Drawing.Point(641, 150);
 			this.buttonSecondary.Name = "buttonSecondary";
 			this.buttonSecondary.Size = new System.Drawing.Size(35, 23);
 			this.buttonSecondary.TabIndex = 12;
@@ -237,7 +242,7 @@ namespace FileDupePruner
 			// 
 			// buttonPrune
 			// 
-			this.buttonPrune.Location = new System.Drawing.Point(641, 174);
+			this.buttonPrune.Location = new System.Drawing.Point(641, 188);
 			this.buttonPrune.Name = "buttonPrune";
 			this.buttonPrune.Size = new System.Drawing.Size(35, 23);
 			this.buttonPrune.TabIndex = 13;
@@ -247,7 +252,7 @@ namespace FileDupePruner
 			// 
 			// buttonCancel
 			// 
-			this.buttonCancel.Location = new System.Drawing.Point(15, 297);
+			this.buttonCancel.Location = new System.Drawing.Point(15, 314);
 			this.buttonCancel.Name = "buttonCancel";
 			this.buttonCancel.Size = new System.Drawing.Size(170, 32);
 			this.buttonCancel.TabIndex = 14;
@@ -269,6 +274,51 @@ namespace FileDupePruner
 			// 
 			this.toolTips.ShowAlways = true;
 			// 
+			// checkBoxFilters
+			// 
+			this.checkBoxFilters.AutoSize = true;
+			this.checkBoxFilters.Location = new System.Drawing.Point(15, 45);
+			this.checkBoxFilters.Name = "checkBoxFilters";
+			this.checkBoxFilters.Size = new System.Drawing.Size(75, 17);
+			this.checkBoxFilters.TabIndex = 16;
+			this.checkBoxFilters.Text = "Use Filters";
+			this.checkBoxFilters.UseVisualStyleBackColor = true;
+			this.checkBoxFilters.CheckedChanged += new System.EventHandler(this.checkBoxFilters_CheckedChanged);
+			// 
+			// textBoxPatternsInclude
+			// 
+			this.textBoxPatternsInclude.Location = new System.Drawing.Point(147, 54);
+			this.textBoxPatternsInclude.Name = "textBoxPatternsInclude";
+			this.textBoxPatternsInclude.Size = new System.Drawing.Size(198, 20);
+			this.textBoxPatternsInclude.TabIndex = 17;
+			// 
+			// labelPatternsInclude
+			// 
+			this.labelPatternsInclude.AutoSize = true;
+			this.labelPatternsInclude.Location = new System.Drawing.Point(141, 39);
+			this.labelPatternsInclude.Name = "labelPatternsInclude";
+			this.labelPatternsInclude.Size = new System.Drawing.Size(204, 13);
+			this.labelPatternsInclude.TabIndex = 18;
+			this.labelPatternsInclude.Text = "Extensions to Include (comma separated):";
+			this.labelPatternsInclude.TextAlign = System.Drawing.ContentAlignment.TopRight;
+			// 
+			// labelPatternsExclude
+			// 
+			this.labelPatternsExclude.AutoSize = true;
+			this.labelPatternsExclude.Location = new System.Drawing.Point(404, 39);
+			this.labelPatternsExclude.Name = "labelPatternsExclude";
+			this.labelPatternsExclude.Size = new System.Drawing.Size(208, 13);
+			this.labelPatternsExclude.TabIndex = 20;
+			this.labelPatternsExclude.Text = "Extensions to Exclude (Comma separated):";
+			this.labelPatternsExclude.TextAlign = System.Drawing.ContentAlignment.TopRight;
+			// 
+			// textBoxPatternsExclude
+			// 
+			this.textBoxPatternsExclude.Location = new System.Drawing.Point(407, 55);
+			this.textBoxPatternsExclude.Name = "textBoxPatternsExclude";
+			this.textBoxPatternsExclude.Size = new System.Drawing.Size(228, 20);
+			this.textBoxPatternsExclude.TabIndex = 19;
+			// 
 			// MainForm
 			// 
 			this.AcceptButton = this.MoveDupesButton;
@@ -276,6 +326,11 @@ namespace FileDupePruner
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.SystemColors.Control;
 			this.ClientSize = new System.Drawing.Size(683, 363);
+			this.Controls.Add(this.labelPatternsExclude);
+			this.Controls.Add(this.textBoxPatternsExclude);
+			this.Controls.Add(this.labelPatternsInclude);
+			this.Controls.Add(this.textBoxPatternsInclude);
+			this.Controls.Add(this.checkBoxFilters);
 			this.Controls.Add(this.checkBoxNameCompare);
 			this.Controls.Add(this.buttonCancel);
 			this.Controls.Add(this.buttonPrune);
@@ -324,6 +379,11 @@ namespace FileDupePruner
 		private System.Windows.Forms.Button buttonCancel;
 		private System.Windows.Forms.CheckBox checkBoxNameCompare;
 		private System.Windows.Forms.ToolTip toolTips;
+		private System.Windows.Forms.CheckBox checkBoxFilters;
+		private System.Windows.Forms.TextBox textBoxPatternsInclude;
+		private System.Windows.Forms.Label labelPatternsInclude;
+		private System.Windows.Forms.Label labelPatternsExclude;
+		private System.Windows.Forms.TextBox textBoxPatternsExclude;
 	}
 }
 
