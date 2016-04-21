@@ -84,11 +84,8 @@ namespace FileDupePruner
 			this.buttonCancel = new System.Windows.Forms.Button();
 			this.checkBoxNameCompare = new System.Windows.Forms.CheckBox();
 			this.toolTips = new System.Windows.Forms.ToolTip(this.components);
-			this.checkBoxFilters = new System.Windows.Forms.CheckBox();
-			this.textBoxPatternsInclude = new System.Windows.Forms.TextBox();
-			this.labelPatternsInclude = new System.Windows.Forms.Label();
-			this.labelPatternsExclude = new System.Windows.Forms.Label();
-			this.textBoxPatternsExclude = new System.Windows.Forms.TextBox();
+			this.textBoxExtensions = new System.Windows.Forms.TextBox();
+			this.comboBoxFilters = new System.Windows.Forms.ComboBox();
 			this.SuspendLayout();
 			// 
 			// MoveDupesButton
@@ -115,10 +112,10 @@ namespace FileDupePruner
 			// 
 			this.ProgressLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
 			this.ProgressLabel.AutoSize = true;
-			this.ProgressLabel.Location = new System.Drawing.Point(12, 224);
-			this.ProgressLabel.MinimumSize = new System.Drawing.Size(650, 50);
+			this.ProgressLabel.Location = new System.Drawing.Point(12, 214);
+			this.ProgressLabel.MinimumSize = new System.Drawing.Size(650, 60);
 			this.ProgressLabel.Name = "ProgressLabel";
-			this.ProgressLabel.Size = new System.Drawing.Size(650, 50);
+			this.ProgressLabel.Size = new System.Drawing.Size(650, 60);
 			this.ProgressLabel.TabIndex = 2;
 			this.ProgressLabel.Text = "Progress";
 			this.ProgressLabel.TextAlign = System.Drawing.ContentAlignment.BottomLeft;
@@ -274,50 +271,26 @@ namespace FileDupePruner
 			// 
 			this.toolTips.ShowAlways = true;
 			// 
-			// checkBoxFilters
+			// textBoxExtensions
 			// 
-			this.checkBoxFilters.AutoSize = true;
-			this.checkBoxFilters.Location = new System.Drawing.Point(15, 45);
-			this.checkBoxFilters.Name = "checkBoxFilters";
-			this.checkBoxFilters.Size = new System.Drawing.Size(75, 17);
-			this.checkBoxFilters.TabIndex = 16;
-			this.checkBoxFilters.Text = "Use Filters";
-			this.checkBoxFilters.UseVisualStyleBackColor = true;
-			this.checkBoxFilters.CheckedChanged += new System.EventHandler(this.checkBoxFilters_CheckedChanged);
+			this.textBoxExtensions.Location = new System.Drawing.Point(274, 44);
+			this.textBoxExtensions.Name = "textBoxExtensions";
+			this.textBoxExtensions.Size = new System.Drawing.Size(388, 20);
+			this.textBoxExtensions.TabIndex = 17;
 			// 
-			// textBoxPatternsInclude
+			// comboBoxFilters
 			// 
-			this.textBoxPatternsInclude.Location = new System.Drawing.Point(147, 54);
-			this.textBoxPatternsInclude.Name = "textBoxPatternsInclude";
-			this.textBoxPatternsInclude.Size = new System.Drawing.Size(198, 20);
-			this.textBoxPatternsInclude.TabIndex = 17;
-			// 
-			// labelPatternsInclude
-			// 
-			this.labelPatternsInclude.AutoSize = true;
-			this.labelPatternsInclude.Location = new System.Drawing.Point(141, 39);
-			this.labelPatternsInclude.Name = "labelPatternsInclude";
-			this.labelPatternsInclude.Size = new System.Drawing.Size(204, 13);
-			this.labelPatternsInclude.TabIndex = 18;
-			this.labelPatternsInclude.Text = "Extensions to Include (comma separated):";
-			this.labelPatternsInclude.TextAlign = System.Drawing.ContentAlignment.TopRight;
-			// 
-			// labelPatternsExclude
-			// 
-			this.labelPatternsExclude.AutoSize = true;
-			this.labelPatternsExclude.Location = new System.Drawing.Point(404, 39);
-			this.labelPatternsExclude.Name = "labelPatternsExclude";
-			this.labelPatternsExclude.Size = new System.Drawing.Size(208, 13);
-			this.labelPatternsExclude.TabIndex = 20;
-			this.labelPatternsExclude.Text = "Extensions to Exclude (Comma separated):";
-			this.labelPatternsExclude.TextAlign = System.Drawing.ContentAlignment.TopRight;
-			// 
-			// textBoxPatternsExclude
-			// 
-			this.textBoxPatternsExclude.Location = new System.Drawing.Point(407, 55);
-			this.textBoxPatternsExclude.Name = "textBoxPatternsExclude";
-			this.textBoxPatternsExclude.Size = new System.Drawing.Size(228, 20);
-			this.textBoxPatternsExclude.TabIndex = 19;
+			this.comboBoxFilters.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+			this.comboBoxFilters.FormattingEnabled = true;
+			this.comboBoxFilters.Items.AddRange(new object[] {
+            "                                 No Filters (Compare all files)",
+            "        Only Compare files WITH these extensions:",
+            "Only Compare files WITHOUT these extensions:"});
+			this.comboBoxFilters.Location = new System.Drawing.Point(15, 44);
+			this.comboBoxFilters.Name = "comboBoxFilters";
+			this.comboBoxFilters.Size = new System.Drawing.Size(253, 21);
+			this.comboBoxFilters.TabIndex = 22;
+			this.comboBoxFilters.SelectedIndexChanged += new System.EventHandler(this.comboBoxFilters_SelectedIndexChanged);
 			// 
 			// MainForm
 			// 
@@ -326,11 +299,8 @@ namespace FileDupePruner
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.BackColor = System.Drawing.SystemColors.Control;
 			this.ClientSize = new System.Drawing.Size(683, 363);
-			this.Controls.Add(this.labelPatternsExclude);
-			this.Controls.Add(this.textBoxPatternsExclude);
-			this.Controls.Add(this.labelPatternsInclude);
-			this.Controls.Add(this.textBoxPatternsInclude);
-			this.Controls.Add(this.checkBoxFilters);
+			this.Controls.Add(this.comboBoxFilters);
+			this.Controls.Add(this.textBoxExtensions);
 			this.Controls.Add(this.checkBoxNameCompare);
 			this.Controls.Add(this.buttonCancel);
 			this.Controls.Add(this.buttonPrune);
@@ -379,11 +349,8 @@ namespace FileDupePruner
 		private System.Windows.Forms.Button buttonCancel;
 		private System.Windows.Forms.CheckBox checkBoxNameCompare;
 		private System.Windows.Forms.ToolTip toolTips;
-		private System.Windows.Forms.CheckBox checkBoxFilters;
-		private System.Windows.Forms.TextBox textBoxPatternsInclude;
-		private System.Windows.Forms.Label labelPatternsInclude;
-		private System.Windows.Forms.Label labelPatternsExclude;
-		private System.Windows.Forms.TextBox textBoxPatternsExclude;
+		private System.Windows.Forms.TextBox textBoxExtensions;
+		private System.Windows.Forms.ComboBox comboBoxFilters;
 	}
 }
 

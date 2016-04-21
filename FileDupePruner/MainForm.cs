@@ -72,17 +72,26 @@ namespace FileDupePruner
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
-		List<TextBox> m_textBoxes = new List<TextBox>();
+		enum FilterEnum
+		{
+			NoFilter,
+			Inclusion,
+			Exclusion
+		}
+		FilterEnum m_selectedFilter = FilterEnum.NoFilter;
+		List<TextBox> m_textBoxesThatSpecifyPath = new List<TextBox>();
+		int m_numFilesToEvaluate = 0;
+		int m_numFilesToPrune = 0;
 
 		/////////////////////////////////////////////////////////////////////////////
 		public MainForm()
 		{
 			InitializeComponent();
 
-			m_textBoxes.Clear();
-			m_textBoxes.Add(PrimaryPathTextbox);
-			m_textBoxes.Add(SecondaryPathTextbox);
-			m_textBoxes.Add(PruneDumpTextbox);
+			m_textBoxesThatSpecifyPath.Clear();
+			m_textBoxesThatSpecifyPath.Add(PrimaryPathTextbox);
+			m_textBoxesThatSpecifyPath.Add(SecondaryPathTextbox);
+			m_textBoxesThatSpecifyPath.Add(PruneDumpTextbox);
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
@@ -91,14 +100,12 @@ namespace FileDupePruner
 			buttonCancel.Hide();
 			OnWithinSelfChanged();
 			OnDoNothingChanged();
-			RefreshFiltersPresentation();
+
+			comboBoxFilters.SelectedIndex = (int)FilterEnum.NoFilter;
 
 			toolTips.SetToolTip(checkBoxPreviewOnly, "Checked: Generate log, but move nothing\nUnchecked: Generate log and move duplicates");
 			toolTips.SetToolTip(checkBoxWithinSelf, "Checked: Check Primary for duplicates within itself\nUnchecked: Check Secondary for duplicates of any Primary file");
 			toolTips.SetToolTip(checkBoxNameCompare, "Checked: Compare names, ignore content\nUnchecked: Ignore names, compare content");
-			toolTips.SetToolTip(checkBoxFilters, "Checked: Compare only files with certain names\nUnchecked: Compare all files");
-			toolTips.SetToolTip(labelPatternsInclude, "Include only files with these extensions (leave blank to match any file)");
-			toolTips.SetToolTip(labelPatternsExclude, "Ignore files with these extensions");
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
@@ -115,6 +122,34 @@ namespace FileDupePruner
 				result += i;
 			}
 			return result;
+		}
+
+		/////////////////////////////////////////////////////////////////////////////
+		static void ExtractFilterExtensions(StreamWriter logWriter, string extensionsText, out List<string> filterExtensions)
+		{
+			filterExtensions = null;
+			string patternString;
+
+			string[] includeTokens = extensionsText.Split(kPatternSeparators, StringSplitOptions.RemoveEmptyEntries);
+			if (includeTokens.Length > 0)
+			{
+				filterExtensions = new List<string>();
+				foreach (string token in includeTokens)
+				{
+					patternString = token.Trim(kTrimChars);
+					if (patternString.Length > 0)
+					{
+						logWriter.WriteLine("\t*." + patternString);
+						filterExtensions.Add(patternString);
+					}
+				}
+			}
+
+			if ((null == filterExtensions)
+				|| (0 == filterExtensions.Count))
+			{
+				logWriter.WriteLine("\tnone");
+			}
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
@@ -163,61 +198,28 @@ namespace FileDupePruner
 				logWriter.WriteLine("Comparing binary content on " + System.DateTime.Now.ToString());
 			}
 
-			List<string> includeExtensions = null;
-			List<string> excludeExtensions = null;
-			if (checkBoxFilters.Checked)
+			List<string> filterExtensions = null;
+			switch (m_selectedFilter)
 			{
-				string patternString;
-
-				logWriter.WriteLine("File Extensions to Include:");
-				string[] includeTokens = textBoxPatternsInclude.Text.Split(kPatternSeparators, StringSplitOptions.RemoveEmptyEntries);
-				if (includeTokens.Length > 0)
-				{
-					includeExtensions = new List<string>();
-					foreach (string token in includeTokens)
-					{
-						patternString = token.Trim(kTrimChars);
-						if (patternString.Length > 0)
-						{
-							logWriter.WriteLine("\t*." + patternString);
-							includeExtensions.Add(patternString);
-						}
-					}
-				}
-
-				if ((null == includeExtensions)
-					|| (0 == includeExtensions.Count))
-				{
-					logWriter.WriteLine("\tnone");
-				}
-
-				logWriter.WriteLine("File Extensions to Exclude:");
-				string[] excludeTokens = textBoxPatternsExclude.Text.Split(kPatternSeparators, StringSplitOptions.RemoveEmptyEntries);
-				if (excludeTokens.Length > 0)
-				{
-					excludeExtensions = new List<string>();
-					foreach (string token in excludeTokens)
-					{
-						patternString = token.Trim(kTrimChars);
-						if (patternString.Length > 0)
-						{
-							logWriter.WriteLine("\t*." + patternString);
-							excludeExtensions.Add(patternString);
-						}
-					}
-				}
-				
-				if((null == excludeExtensions)
-					|| (0 == excludeExtensions.Count))
-				{
-					logWriter.WriteLine("\tnone");
-				}
+				case FilterEnum.NoFilter:
+					break;
+				case FilterEnum.Inclusion:
+					logWriter.WriteLine("File Extensions to Include:");
+					ExtractFilterExtensions(logWriter, textBoxExtensions.Text, out filterExtensions);
+					break;
+				case FilterEnum.Exclusion:
+					logWriter.WriteLine("File Extensions to Exclude:");
+					ExtractFilterExtensions(logWriter, textBoxExtensions.Text, out filterExtensions);
+					break;
 			}
+
+			m_numFilesToPrune = 0;
 
 			//Gather files...
 			List<string> primaryFilenames = new List<string>();
-			GatherAllFiles(primaryPath, ref primaryFilenames, includeExtensions, excludeExtensions);
+			GatherAllFiles(primaryPath, ref primaryFilenames, m_selectedFilter, filterExtensions);
 			int numPrimaryFiles = primaryFilenames.Count;
+			m_numFilesToEvaluate = numPrimaryFiles;
 
 			if (currentBackgroundWorker.CancellationPending)
 			{
@@ -233,7 +235,8 @@ namespace FileDupePruner
 			}
 			else
 			{
-				GatherAllFiles(secondaryPath, ref secondaryFilenames, includeExtensions, excludeExtensions);
+				GatherAllFiles(secondaryPath, ref secondaryFilenames, m_selectedFilter, filterExtensions);
+				m_numFilesToEvaluate += secondaryFilenames.Count;
 				logWriter.WriteLine("Primary (" + numPrimaryFiles.ToString() + " files) | Secondary (" + secondaryFilenames.Count.ToString() + " files)");
 				logWriter.WriteLine(primaryPath + " | " + secondaryPath);
 			}
@@ -319,6 +322,7 @@ namespace FileDupePruner
 							{
 								string prunedFileNameWithPath = pruneDumpPath + "\\" + secondaryFileWithoutRoot;
 								filesToPrune.Add(secondaryFile, prunedFileNameWithPath);
+								++m_numFilesToPrune;
 							}
 						}
 					}
@@ -389,6 +393,7 @@ namespace FileDupePruner
 							{
 								string prunedFileNameWithPath = pruneDumpPath + "\\" + secondaryFileWithoutRoot;
 								filesToPrune.Add(secondaryFile, prunedFileNameWithPath);
+								++m_numFilesToPrune;
 							}
 						}
 					}
@@ -400,9 +405,9 @@ namespace FileDupePruner
 			}
 
 			//Do the pruning...
-			int numFilesToPrune = filesToPrune.Count;
+			Debug.Assert(m_numFilesToPrune == filesToPrune.Count);
 			if (!previewOnly
-				&& (numFilesToPrune > 0))
+				&& (m_numFilesToPrune > 0))
 			{
 				logWriter.WriteLine("_________");
 				string sourcePath, prunedFileNameWithPath, prunedDirectoryName;
@@ -438,8 +443,8 @@ namespace FileDupePruner
 			logWriter.WriteLine("_________");
 			logWriter.WriteLine("All done.");
 			logMsg = previewOnly
-					? numFilesToPrune.ToString() + " files can be pruned."
-					: numFilesToPrune.ToString() + " files were pruned.";
+					? m_numFilesToPrune.ToString() + " out of the " + m_numFilesToEvaluate.ToString() + " evaluated files can be pruned."
+					: m_numFilesToPrune.ToString() + " out of the " + m_numFilesToEvaluate.ToString() + " evaluated files were pruned.";
 			logWriter.WriteLine(logMsg);
 			logWriter.Close();
 		}
@@ -451,7 +456,8 @@ namespace FileDupePruner
 			int steps = progressState.m_steps;
 			int maxSteps = progressState.m_maxSteps;
 			float percent = (float)steps/(float)maxSteps;
-			string status = "Progress: " + steps.ToString() + "/" + maxSteps.ToString() + " (" + (100.0f * percent).ToString() + "%)";
+			string status = "Files to Prune/Evaluate: " + m_numFilesToPrune.ToString() + "/" + m_numFilesToEvaluate.ToString();
+			status += "\nProgress: " + steps.ToString() + "/" + maxSteps.ToString() + " (" + (100.0f * percent).ToString() + "%)";
 			status += "\nComparing " + progressState.m_fileA;
 			status += "\nto " + progressState.m_fileB;
 			ProgressLabel.Text = status;
@@ -468,7 +474,17 @@ namespace FileDupePruner
 			}
 			else
 			{
-				MessageBox.Show(this, "All done!");
+				string msg = "All done!\n";
+				msg += m_numFilesToEvaluate.ToString() + " files were evaluated\n";
+				if (checkBoxPreviewOnly.Checked)
+				{
+					msg += m_numFilesToPrune.ToString() + " can be pruned\n";
+				}
+				else
+				{
+					msg += m_numFilesToPrune.ToString() + " were pruned\n";
+				}
+				MessageBox.Show(this, msg);
 			}
 
 			pruneProgressBar.Value = 0;
@@ -545,9 +561,8 @@ namespace FileDupePruner
 			PruneDumpTextbox.Enabled = enabled;
 			buttonPrune.Enabled = enabled;
 
-			checkBoxFilters.Enabled = enabled;
-			textBoxPatternsInclude.Enabled = enabled;
-			textBoxPatternsExclude.Enabled = enabled;
+			comboBoxFilters.Enabled = enabled;
+			textBoxExtensions.Enabled = enabled;
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
@@ -575,42 +590,62 @@ namespace FileDupePruner
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
-		static bool PassesFilterTest(string fileExtension, List<string> includeExtensions, List<string> excludeExtensions)
+		static bool PassesFilterTest(string fileExtension, FilterEnum filter, List<string> filterExtensions)
 		{
-			fileExtension = fileExtension.Trim(kTrimChars);
+			bool result = false;
 
-			if (null != excludeExtensions)
+			switch (filter)
 			{
-				foreach (string ext in excludeExtensions)
-				{
-					if (ext.Equals(fileExtension, StringComparison.CurrentCultureIgnoreCase))
+				case FilterEnum.NoFilter:
+					result = true;
+					break;
+				case FilterEnum.Inclusion:
+					if ((null == filterExtensions)
+						|| (0 == filterExtensions.Count))
 					{
-						return false;
+						//They specified a filter, but no extensions?
+						//Well... ok... but that's kind of weird.
+						//Just give it to them. Maybe they're confused
+						result = true;
 					}
-				}
-			}
-
-			if ((null == includeExtensions)
-				|| (0 == includeExtensions.Count))
-			{
-				return true;
-			}
-			else
-			{
-				foreach (string ext in includeExtensions)
-				{
-					if (ext.Equals(fileExtension, StringComparison.CurrentCultureIgnoreCase))
+					else
 					{
-						return true;
+						fileExtension = fileExtension.Trim(kTrimChars);
+						foreach (string ext in filterExtensions)
+						{
+							if (ext.Equals(fileExtension, StringComparison.CurrentCultureIgnoreCase))
+							{
+								result = true;
+								break;
+							}
+						}
 					}
-				}
+					break;
+				case FilterEnum.Exclusion:
+					if (null == filterExtensions)
+					{
+						result = true;
+					}
+					else
+					{
+						fileExtension = fileExtension.Trim(kTrimChars);
+						foreach (string ext in filterExtensions)
+						{
+							if (ext.Equals(fileExtension, StringComparison.CurrentCultureIgnoreCase))
+							{
+								result = false;
+								break;
+							}
+						}
+					}
+					break;
 			}
 
-			return false;
+			return result;
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
-		static void GatherAllFiles(string sourcePath, ref List<string> fileList, List<string> includeExtensions, List<string> excludeExtensions)
+		static void GatherAllFiles(string sourcePath, ref List<string> fileList, FilterEnum filter, List<string> filterExtensions)
 		{
 			//First, the files...
 			string nonPathName;
@@ -621,7 +656,7 @@ namespace FileDupePruner
 			for (int i = 0; i < numFiles; ++i)
 			{
 				nonPathName = Path.GetFileName(files[i]);
-				if (PassesFilterTest(Path.GetExtension(nonPathName), includeExtensions, excludeExtensions))
+				if (PassesFilterTest(Path.GetExtension(nonPathName), filter, filterExtensions))
 				{
 					sourceFileName = sourcePath + "\\" + nonPathName;
 					fileList.Add(sourceFileName);
@@ -636,7 +671,7 @@ namespace FileDupePruner
 			{
 				nonPathName = Path.GetFileName(folders[i]);
 				nestedSourcePath = sourcePath + "\\" + nonPathName;
-				GatherAllFiles(nestedSourcePath, ref fileList, includeExtensions, excludeExtensions);
+				GatherAllFiles(nestedSourcePath, ref fileList, filter, filterExtensions);
 			}
 		}
 
@@ -661,7 +696,7 @@ namespace FileDupePruner
 		//Returns true if duplicate path detected
 		bool DuplicatesAnyOtherTextBoxes(TextBox self, string pathName)
 		{
-			foreach (TextBox t in m_textBoxes)
+			foreach (TextBox t in m_textBoxesThatSpecifyPath)
 			{
 				if (self == t)
 				{
@@ -922,28 +957,19 @@ namespace FileDupePruner
 		}
 
 		/////////////////////////////////////////////////////////////////////////////
-		void RefreshFiltersPresentation()
+		private void comboBoxFilters_SelectedIndexChanged(object sender, EventArgs e)
 		{
-			if (checkBoxFilters.Checked)
+			m_selectedFilter = (FilterEnum)comboBoxFilters.SelectedIndex;
+			switch (m_selectedFilter)
 			{
-				labelPatternsExclude.Show();
-				textBoxPatternsInclude.Show();
-				labelPatternsInclude.Show();
-				textBoxPatternsExclude.Show();
+				case FilterEnum.NoFilter:
+					textBoxExtensions.Hide();
+					break;
+				case FilterEnum.Inclusion:
+				case FilterEnum.Exclusion:
+					textBoxExtensions.Show();
+					break;
 			}
-			else
-			{
-				labelPatternsExclude.Hide();
-				textBoxPatternsInclude.Hide();
-				labelPatternsInclude.Hide();
-				textBoxPatternsExclude.Hide();
-			}
-		}
-
-		/////////////////////////////////////////////////////////////////////////////
-		private void checkBoxFilters_CheckedChanged(object sender, EventArgs e)
-		{
-			RefreshFiltersPresentation();
 		}
 	}
 }
